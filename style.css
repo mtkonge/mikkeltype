@@ -1,0 +1,35 @@
+:root {
+    --bg-color: #323437;
+    --text-color: #EAEAEA;
+    --correct-letter-color: #EAEAEA;
+    --untyped-letter-color: #646669;
+}
+
+body {
+    margin : 0;
+    display: flex;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    justify-content: center;
+    height: 100vh;
+    
+}
+
+#words {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+#typing-area {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 80%
+}
+
+letter {
+    color: var(--untyped-letter-color);
+    font-size: 32px;
+    
+}

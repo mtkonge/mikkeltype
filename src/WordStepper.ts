@@ -1,7 +1,7 @@
 // naming is hard
 export class WordStepper {
-    private wordIndex = 0;
-    private letterIndex = 0;
+    wordIndex = 0;
+    letterIndex = 0;
     constructor(private words: string[]) {}
 
     public nextLetter() {

@@ -3,6 +3,7 @@
     --text-color: #EAEAEA;
     --correct-letter-color: #EAEAEA;
     --untyped-letter-color: #646669;
+    --incorrect-letter-color: #E16666;
 }
 
 body {
@@ -30,10 +31,17 @@ body {
 letter {
     color: var(--untyped-letter-color);
     font-size: 32px;
-    
+}
+
+.correct {
+    color: var(--correct-letter-color)
+}
+
+.incorrect {
+    color: var(--incorrect-letter-color)
 }
 
 #words-input {
     all: unset;
-    width: 1;
+    width: 0;
 }

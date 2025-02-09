@@ -29,19 +29,35 @@ async function main() {
     const wordStepper = new WordStepper(words);
 
     const typingArea = document.querySelector<HTMLDivElement>("#typing-area")!;
+    const wordsElement = document.querySelector<HTMLDivElement>("#words")!;
     const input = document.querySelector<HTMLInputElement>("#words-input")!;
     typingArea.addEventListener("click", () => input.focus());
-    input.addEventListener("keyup", (event: KeyboardEvent) => {
+    input.addEventListener("keydown", (event: KeyboardEvent) => {
+        const letterElement = wordsElement.children[wordStepper.wordIndex]
+            .children[wordStepper.letterIndex];
+
+        console.log(letterElement);
         if (event.key === " ") {
             wordStepper.wordDone();
             console.log("next word");
         } else if (event.key === "Backspace") {
             wordStepper.back();
+            const letterElementBefore =
+                wordsElement.children[wordStepper.wordIndex]
+                    .children[wordStepper.letterIndex];
+
+            letterElementBefore.classList.forEach((className) => {
+                letterElementBefore.classList.remove(className);
+            });
             console.log("back");
         } else if (
-            wordStepper.nextLetter() === input.value[input.value.length - 1]
+            wordStepper.nextLetter() === event.key
         ) {
+            letterElement.classList.add("correct");
             console.log("correct");
+        } else {
+            letterElement.classList.add("incorrect");
+            console.log("incorrect");
         }
     });
 }

@@ -1,4 +1,4 @@
-import { WordStepper } from "./WordStepper.ts";
+import { Word, WordStepper } from "./WordStepper.ts";
 
 function wordsFromFile(): Promise<string[]> {
     return fetch("assets/words.txt")
@@ -26,37 +26,60 @@ function addWordsToTypingArea(words: string[]) {
 async function main() {
     const words = await wordsFromFile();
     addWordsToTypingArea(words);
-    const wordStepper = new WordStepper(words);
+
+    // 😭
+    const wordFr: Word[] = [];
+    for (let i = 0; i < words.length; i++) {
+        wordFr.push({ letters: words[i], addedLetters: "" });
+    }
+    const wordStepper = new WordStepper(wordFr);
 
     const typingArea = document.querySelector<HTMLDivElement>("#typing-area")!;
     const wordsElement = document.querySelector<HTMLDivElement>("#words")!;
     const input = document.querySelector<HTMLInputElement>("#words-input")!;
     typingArea.addEventListener("click", () => input.focus());
     input.addEventListener("keydown", (event: KeyboardEvent) => {
-        const letterElement = wordsElement.children[wordStepper.wordIndex]
-            .children[wordStepper.letterIndex];
+        const wordElement = wordsElement
+            .children[wordStepper.wordIndex];
+        const letterElement = wordElement.children[wordStepper.letterIndex];
 
-        console.log(letterElement);
         if (event.key === " ") {
             wordStepper.wordDone();
             console.log("next word");
         } else if (event.key === "Backspace") {
             wordStepper.back();
+            console.log(wordStepper.wordIndex);
+            console.log(wordStepper.letterIndex);
             const letterElementBefore =
                 wordsElement.children[wordStepper.wordIndex]
                     .children[wordStepper.letterIndex];
-
-            letterElementBefore.classList.forEach((className) => {
-                letterElementBefore.classList.remove(className);
-            });
+            if (wordStepper.currentWord().addedLetters.length > 0) {
+                wordsElement.children[wordStepper.wordIndex].removeChild(
+                    letterElementBefore,
+                );
+            } else {
+                letterElementBefore.classList.forEach((className) => {
+                    letterElementBefore.classList.remove(className);
+                });
+            }
             console.log("back");
+        } else if (event.key.length > 1) {
+            return;
         } else if (
             wordStepper.nextLetter() === event.key
         ) {
             letterElement.classList.add("correct");
             console.log("correct");
         } else {
-            letterElement.classList.add("incorrect");
+            if (wordStepper.letterIndex > wordElement.children.length) {
+                wordStepper.addLetter(event.key);
+                const newLetterElement = document.createElement("letter");
+                newLetterElement.append(event.key);
+                newLetterElement.classList.add("incorrect");
+                wordElement.appendChild(newLetterElement);
+            } else {
+                letterElement.classList.add("incorrect");
+            }
             console.log("incorrect");
         }
     });

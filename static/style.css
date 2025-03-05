@@ -55,9 +55,18 @@ body {
 }
 
 #caret {
-    width: 4px;
+    width: 3px;
     background-color: yellow;
     position: absolute;
+    border-radius: 1rem;
+
+    transition: top 150ms, left 150ms;
+    animation: caret 500ms ease-in-out infinite alternate;
+}
+
+@keyframes caret {
+    0% { opacity: 0; }
+    50% { opacity: 1; }
 }
 
 #words-input {

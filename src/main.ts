@@ -145,7 +145,7 @@ function moveCaret(caret: HTMLElement, words: HTMLElement) {
     } else {
         throw new Error(`unreachable: invalid 'current' value: '${letter}'`);
     }
-    caret.style.top = `${rect.top}px`;
+    caret.style.top = `${rect.top - rect.height * 0.125}px`;
     caret.style.height = `${rect.height}px`;
 }
 
@@ -169,6 +169,9 @@ async function main() {
     const typingArea = document.querySelector<HTMLDivElement>("#typing-area")!;
     const input = document.querySelector<HTMLInputElement>("#words-input")!;
     typingArea.addEventListener("click", () => input.focus());
+    input.addEventListener("keydown", () => {
+        input.setSelectionRange(input.value.length, input.value.length);
+    });
     input.addEventListener(
         "keyup",
         () => render(input.value, words),

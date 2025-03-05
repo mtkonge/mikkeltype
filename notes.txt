@@ -1,0 +1,17 @@
+wrong words (words with >0 !isCorrect) have a red underline
+wrong characters show the intended character if there is one at that position, else the character
+i.e. display[i] = i < word.len ? word[i] : input[i]
+wrong characters if part of the word show a bold red, otherwise a faded dark red
+i.e.
+```ts
+color = i < word.len
+ ? isCorrect(word, i)
+   ? white
+   : red
+ : dark_red
+
+if the line in focus is the first row, the focus will be on the first row
+otherwise, the focus is on the middle row
+there is a total of 3 rows at any one time
+idea: split rows based on characters. max n characters on any row. otherwise, it gets delegated to the next row
+

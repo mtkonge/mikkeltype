@@ -1,7 +1,23 @@
 import { Word, WordStepper } from "./WordStepper.ts";
 
-function wordsFromFile(): Promise<string[]> {
-    return fetch("assets/words.txt")
+type InputCorrectness = "correct" | "incorrect" | "out-of-range";
+
+function correctness(
+    input: string,
+    word: string,
+    characterIndex: number,
+): InputCorrectness {
+    if (characterIndex >= word.length) {
+        return "out-of-range";
+    }
+    if (input[characterIndex] !== word[characterIndex]) {
+        return "incorrect";
+    }
+    return "correct";
+}
+
+async function wordsFromFile(): Promise<string[]> {
+    return await fetch("assets/words.txt")
         .then((res) => res.text())
         .then((text) => text.split("\n"));
 }

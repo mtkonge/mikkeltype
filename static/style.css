@@ -2,8 +2,9 @@
     --bg-color: #323437;
     --text-color: #EAEAEA;
     --correct-letter-color: #EAEAEA;
-    --untyped-letter-color: #646669;
+    --missing-letter-color: #646669;
     --incorrect-letter-color: #E16666;
+    --out-of-range-letter-color: #AA2222;
 }
 
 body {
@@ -28,17 +29,35 @@ body {
     width: 80%
 }
 
-letter {
-    color: var(--untyped-letter-color);
+.word-incorrect {
+    text-decoration: underline 0.1rem solid var(--incorrect-letter-color);
+    text-underline-offset: 0.25rem;
+}
+
+.letter {
     font-size: 32px;
 }
 
-.correct {
+.letter-missing {
+    color: var(--missing-letter-color);
+}
+
+.letter-correct {
     color: var(--correct-letter-color)
 }
 
-.incorrect {
+.letter-incorrect {
     color: var(--incorrect-letter-color)
+}
+
+.letter-out-of-range {
+    color: var(--out-of-range-letter-color)
+}
+
+#caret {
+    width: 4px;
+    background-color: yellow;
+    position: absolute;
 }
 
 #words-input {

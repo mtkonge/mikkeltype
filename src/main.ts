@@ -1,88 +1,182 @@
-import { Word, WordStepper } from "./WordStepper.ts";
+type LetterKind = "correct" | "incorrect" | "out-of-range" | "missing";
 
-function wordsFromFile(): Promise<string[]> {
-    return fetch("assets/words.txt")
+type Letter = {
+    value: string;
+    kind: LetterKind;
+    current: "at" | "after" | "not";
+};
+
+type Word = {
+    letters: Letter[];
+};
+
+function range(length: number): number[] {
+    return [...Array(length).keys()];
+}
+
+type LetterOpts = {
+    input: string;
+    word: string;
+    idx: number;
+    current: Letter["current"];
+};
+
+type LetterKindOpts = Omit<LetterOpts, "current">;
+
+function letterKind(
+    { input, word, idx }: LetterKindOpts,
+): LetterKind {
+    if (idx >= word.length) {
+        return "out-of-range";
+    }
+    if (idx >= input.length) {
+        return "missing";
+    }
+    if (input[idx] !== word[idx]) {
+        return "incorrect";
+    }
+    return "correct";
+}
+
+async function wordsFromFile(): Promise<string[]> {
+    return await fetch("words.txt")
         .then((res) => res.text())
         .then((text) => text.split("\n"));
 }
 
-function addWordsToTypingArea(words: string[]) {
-    const typingArea = document.querySelector<HTMLDivElement>("#typing-area")!;
-    const wordsDiv = document.createElement("div");
-    wordsDiv.id = "words";
-    for (let i = 0; i < words.length; i++) {
-        const word = document.createElement("div");
-        word.classList.add("word");
-        for (let j = 0; j < words[i].length; j++) {
-            const letterElement = document.createElement("letter");
-            letterElement.innerHTML = words[i][j];
-            word.append(letterElement);
-        }
-        wordsDiv.append(word);
+function buildLetter({ word, input, idx, current }: LetterOpts): Letter {
+    const kind = letterKind({ word, input, idx });
+    const value = word[idx] ?? input[idx];
+    return {
+        kind,
+        value,
+        current,
+    };
+}
+
+function letterIsCurrent(
+    { word, input, idx }: LetterKindOpts,
+): Letter["current"] {
+    if (input.length < word.length) {
+        return idx === input.length ? "at" : "not";
     }
-    typingArea.append(wordsDiv);
+    return idx === input.length - 1 ? "after" : "not";
+}
+
+function buildWord(word: string, input: string, current: boolean): Word {
+    const max = Math.max(word.length, input.length);
+    const letters = range(max).map((idx) =>
+        buildLetter({
+            word,
+            input,
+            idx,
+            current: current ? letterIsCurrent({ word, input, idx }) : "not",
+        })
+    );
+    return { letters };
+}
+
+function wordCorrect(word: Letter[]): boolean {
+    const empty = word.every((letter) => letter.kind === "missing");
+    const correct = word.every((letter) => letter.kind === "correct");
+    return empty || correct;
+}
+
+function buildUi(inputWords: string[], words: string[]): Word[] {
+    console.assert(
+        inputWords.length <= words.length,
+        "you shouldn't render after the typing session is over",
+    );
+    console.assert(
+        inputWords.length > 0,
+        "input words should never be empty",
+    );
+
+    return words.map((word, wordIdx) => {
+        const input = inputWords[wordIdx] ?? "";
+        const current = wordIdx === inputWords.length - 1;
+        return buildWord(word, input, current);
+    });
+}
+
+function renderLetter({ kind, value, current }: Letter): HTMLElement {
+    const element = document.createElement("span");
+    element.textContent = value;
+    element.classList.add("letter", `letter-${kind}`);
+    element.dataset.current = current;
+    return element;
+}
+
+function renderWord(word: Word): HTMLElement {
+    const letters = word.letters.map(renderLetter);
+    const element = document.createElement("div");
+    element.classList.add("word");
+
+    const isCurrentWord = word.letters.some((letter) =>
+        letter.current !== "not"
+    );
+    if (!isCurrentWord && !wordCorrect(word.letters)) {
+        element.classList.add("word-incorrect");
+    }
+    element.append(...letters);
+    return element;
+}
+
+function renderUi(words: Word[]): HTMLElement[] {
+    return words.map(renderWord);
+}
+
+function moveCaret(caret: HTMLElement, words: HTMLElement) {
+    const letters = [
+        ...words.querySelectorAll<HTMLElement>(
+            "[data-current]",
+        ).values(),
+    ];
+    const letter = letters.find((v) => v.dataset.current !== "not");
+    if (letter === undefined) {
+        throw new Error("there should always be atleast one caret position");
+    }
+    const current = letter.dataset.current;
+    const rect = letter.getBoundingClientRect();
+    if (current === "at") {
+        caret.style.left = `${rect.left}px`;
+    } else if (current === "after") {
+        caret.style.left = `${rect.right}px`;
+    } else {
+        throw new Error(`unreachable: invalid 'current' value: '${letter}'`);
+    }
+    caret.style.top = `${rect.top - rect.height * 0.125}px`;
+    caret.style.height = `${rect.height}px`;
+}
+
+function render(
+    input: string,
+    words: string[],
+) {
+    const wordsElement = document.querySelector<HTMLDivElement>("#words")!;
+    const inputWords = input.split(" ");
+    wordsElement.replaceChildren(
+        ...renderUi(buildUi(inputWords, words)),
+    );
+
+    const caretElement = document.querySelector<HTMLDivElement>("#caret")!;
+    requestAnimationFrame(() => moveCaret(caretElement, wordsElement));
 }
 
 async function main() {
     const words = await wordsFromFile();
-    addWordsToTypingArea(words);
-
-    // 😭
-    const wordFr: Word[] = [];
-    for (let i = 0; i < words.length; i++) {
-        wordFr.push({ letters: words[i], addedLetters: "" });
-    }
-    const wordStepper = new WordStepper(wordFr);
 
     const typingArea = document.querySelector<HTMLDivElement>("#typing-area")!;
-    const wordsElement = document.querySelector<HTMLDivElement>("#words")!;
     const input = document.querySelector<HTMLInputElement>("#words-input")!;
     typingArea.addEventListener("click", () => input.focus());
-    input.addEventListener("keydown", (event: KeyboardEvent) => {
-        const wordElement = wordsElement
-            .children[wordStepper.wordIndex];
-        const letterElement = wordElement.children[wordStepper.letterIndex];
-
-        if (event.key === " ") {
-            wordStepper.wordDone();
-            console.log("next word");
-        } else if (event.key === "Backspace") {
-            wordStepper.back();
-            console.log(wordStepper.wordIndex);
-            console.log(wordStepper.letterIndex);
-            const letterElementBefore =
-                wordsElement.children[wordStepper.wordIndex]
-                    .children[wordStepper.letterIndex];
-            if (wordStepper.currentWord().addedLetters.length > 0) {
-                wordsElement.children[wordStepper.wordIndex].removeChild(
-                    letterElementBefore,
-                );
-            } else {
-                letterElementBefore.classList.forEach((className) => {
-                    letterElementBefore.classList.remove(className);
-                });
-            }
-            console.log("back");
-        } else if (event.key.length > 1) {
-            return;
-        } else if (
-            wordStepper.nextLetter() === event.key
-        ) {
-            letterElement.classList.add("correct");
-            console.log("correct");
-        } else {
-            if (wordStepper.letterIndex > wordElement.children.length) {
-                wordStepper.addLetter(event.key);
-                const newLetterElement = document.createElement("letter");
-                newLetterElement.append(event.key);
-                newLetterElement.classList.add("incorrect");
-                wordElement.appendChild(newLetterElement);
-            } else {
-                letterElement.classList.add("incorrect");
-            }
-            console.log("incorrect");
-        }
+    input.addEventListener("keydown", () => {
+        input.setSelectionRange(input.value.length, input.value.length);
     });
+    input.addEventListener(
+        "keyup",
+        () => render(input.value, words),
+    );
+    render(input.value, words);
 }
 
 main();

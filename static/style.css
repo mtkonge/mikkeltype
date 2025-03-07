@@ -26,7 +26,7 @@ body {
 
 #typing-area {
     display: flex;
-    width: 80%
+    width: 80%;
 }
 
 .word-incorrect {
@@ -59,9 +59,19 @@ body {
     background-color: yellow;
     position: absolute;
     border-radius: 1rem;
+    top: 0;
+    left: 0;
+    height: 2.5em;
 
-    transition: top 150ms, left 150ms;
+    opacity: 0;
+
+    transition: transform 150ms;
     animation: caret 500ms ease-in-out infinite alternate;
+}
+
+@keyframes caret-init {
+    0% {opacity: 0; }
+    100% { opacity: 1; }
 }
 
 @keyframes caret {

@@ -1,19 +1,47 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <script src="bundle.js" type="module" defer></script>
-    <link rel="stylesheet" href="style.css">
-    <title>MikkelType</title>
-</head>
-<body>
-    <div id="typing-area">
-        <input autofocus id="words-input" type="text">
-        <div id="words"></div>
-        <div id="caret"></div>
-    </div>
-    
-    <img id="restart-btn" src="/restart.svg" width="50" height="50" tabindex="0">
-</body>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <script src="bundle.js" type="module" defer></script>
+        <link rel="stylesheet" href="style.css">
+        <title>MikkelType</title>
+    </head>
+    <body>
+        <div id="typing-area">
+            <input id="words-input" type="text">
+            <div id="words"></div>
+            <div id="caret"></div>
+        </div>
+
+        <button id="restart-btn">
+            <svg
+                version="1.1"
+                viewBox="0 0 100 100"
+                width="50"
+                height="50"
+                xmlns="http://www.w3.org/2000/svg"
+            >
+                <defs>
+                    <clipPath id="reimar">
+                        <rect x="50" y="0" width="50" height="100" />
+                        <rect x="0" y="0" width="50" height="50" />
+                    </clipPath>
+                </defs>
+
+                <ellipse
+                    rx="30"
+                    ry="30"
+                    cx="50"
+                    cy="50"
+                    stroke="currentcolor"
+                    fill="transparent"
+                    stroke-width="8"
+                    clip-path="url(#reimar)"
+                />
+
+                <polygon points="50,65 50,95 35,80" fill="currentcolor" />
+            </svg>
+        </button>
+    </body>
 </html>

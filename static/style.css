@@ -1,14 +1,14 @@
 :root {
     --bg-color: #323437;
-    --text-color: #EAEAEA;
-    --correct-letter-color: #EAEAEA;
+    --text-color: #eaeaea;
+    --correct-letter-color: #eaeaea;
     --missing-letter-color: #646669;
-    --incorrect-letter-color: #E16666;
-    --out-of-range-letter-color: #AA2222;
+    --incorrect-letter-color: #e16666;
+    --out-of-range-letter-color: #aa2222;
 }
 
 body {
-    margin : 0;
+    margin: 0;
     display: flex;
     flex-direction: column;
     background-color: var(--bg-color);
@@ -16,7 +16,6 @@ body {
     justify-content: center;
     align-items: center;
     height: 100vh;
-    
 }
 
 #words {
@@ -45,15 +44,15 @@ body {
 }
 
 .letter-correct {
-    color: var(--correct-letter-color)
+    color: var(--correct-letter-color);
 }
 
 .letter-incorrect {
-    color: var(--incorrect-letter-color)
+    color: var(--incorrect-letter-color);
 }
 
 .letter-out-of-range {
-    color: var(--out-of-range-letter-color)
+    color: var(--out-of-range-letter-color);
 }
 
 #words-input:focus ~ #caret {
@@ -77,8 +76,12 @@ body {
 }
 
 @keyframes caret {
-    0% { opacity: 0; }
-    50% { opacity: 1; }
+    0% {
+        opacity: 0;
+    }
+    50% {
+        opacity: 1;
+    }
 }
 
 #words-input {
@@ -87,14 +90,16 @@ body {
 }
 
 #restart-btn {
-    background-image: url(/restart.svg);
+    padding: 0;
+    color: var(--missing-letter-color);
+    border: unset;
+    background-color: unset;
+    transition: color 150ms;
+
+    outline-color: yellow;
+}
+
+#restart-btn:focus-within,
+#restart-btn:hover {
     color: var(--text-color);
-    border: 2px solid transparent;
 }
-
-#restart-btn:focus {
-    border-color: yellow;
-    border-radius: 3px;
-    outline: none;
-}
-

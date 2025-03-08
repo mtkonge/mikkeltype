@@ -158,7 +158,7 @@ function moveCaret(caret: HTMLElement, words: HTMLElement) {
     } else {
         throw new Error(`unreachable: invalid 'current' value: '${letter}'`);
     }
-    const y = rect.top;
+    const y = rect.top - rect.height * 0.125;
     caret.style.transform = `translate(${x}px, ${y}px)`;
 }
 

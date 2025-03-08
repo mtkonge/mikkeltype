@@ -162,13 +162,13 @@ function moveCaret(caret: HTMLElement, words: HTMLElement) {
     caret.style.transform = `translate(${x}px, ${y}px)`;
 }
 
-function diffUi(old: Word[], current: Word[]): Word[] {
+function diffUi(old: OldUi, current: Word[]): Word[] {
     console.assert(
-        old.length === current.length,
+        old.ui.length === current.length,
         "should not add old or new words after start",
     );
     return range(current.length).filter((index) => {
-        const oldLetters = old[index].letters;
+        const oldLetters = old.ui[index].letters;
         const currentLetters = current[index].letters;
         if (oldLetters.length !== currentLetters.length) {
             return true;
@@ -191,19 +191,16 @@ function animateCaret(wordsElement: HTMLElement) {
     requestAnimationFrame(() => moveCaret(caretElement, wordsElement));
 }
 
+type OldUi = { ui: Word[] };
+
 function render(
     rawInput: string,
     words: string[],
-    old: Word[] | null,
-): Word[] {
+    old: OldUi,
+) {
     const input = rawInput.split(" ");
     const wordsElement = document.querySelector<HTMLDivElement>("#words")!;
     const current = buildUi(input, words);
-    if (old === null) {
-        wordsElement.replaceChildren(...renderUi(current));
-        animateCaret(wordsElement);
-        return current;
-    }
     const ui = diffUi(old, current);
     for (const word of ui) {
         const element = document.getElementById(`word-${word.index}`);
@@ -216,7 +213,16 @@ function render(
     }
     animateCaret(wordsElement);
 
-    return current;
+    old.ui = current;
+}
+
+function initialRender(rawInput: string, words: string[]): OldUi {
+    const input = rawInput.split(" ");
+    const wordsElement = document.querySelector<HTMLDivElement>("#words")!;
+    const ui = buildUi(input, words);
+    wordsElement.replaceChildren(...renderUi(ui));
+    animateCaret(wordsElement);
+    return { ui };
 }
 
 async function main() {
@@ -225,12 +231,13 @@ async function main() {
     const typingArea = document.querySelector<HTMLDivElement>("#typing-area")!;
     const input = document.querySelector<HTMLInputElement>("#words-input")!;
 
-    let oldUi = render(input.value, words, null);
+    const oldUi = initialRender(input.value, words);
 
     typingArea.addEventListener("click", () => input.focus());
-    input.addEventListener("keydown", () => {
-        input.setSelectionRange(input.value.length, input.value.length);
-    });
+    input.addEventListener(
+        "keydown",
+        () => input.setSelectionRange(input.value.length, input.value.length),
+    );
 
     input.addEventListener("keydown", (event) => {
         if (event.key === "Backspace") {
@@ -255,7 +262,7 @@ async function main() {
 
     input.addEventListener(
         "keyup",
-        () => oldUi = render(input.value, words, oldUi),
+        () => render(input.value, words, oldUi),
     );
     addEventListener(
         "resize",
@@ -265,15 +272,21 @@ async function main() {
     const restart = document.querySelector<HTMLElement>("#restart-btn")!;
 
     restart.addEventListener("click", () => {
-        input.value = "";
         render("", words, oldUi);
-        document.querySelector<HTMLInputElement>("#words-input")!.focus();
+        input.value = "";
+        input.focus();
     });
 
     restart.addEventListener("keydown", (event: KeyboardEvent) => {
-        if (event.key === "Enter" || event.key === "Space") {
-            (event.target as HTMLElement).click();
+        if (event.key !== "Enter" && event.key !== "Space") return;
+
+        if (!(event.target instanceof HTMLElement)) {
+            throw new Error(
+                "unreachable: event.target is always a htmlelement",
+            );
         }
+
+        event.target.click();
     });
 }
 

@@ -90,6 +90,7 @@ body {
 }
 
 #restart-btn {
+    cursor: pointer;
     padding: 0;
     color: var(--missing-letter-color);
     border: unset;

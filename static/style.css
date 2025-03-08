@@ -1,21 +1,21 @@
 :root {
     --bg-color: #323437;
-    --text-color: #EAEAEA;
-    --correct-letter-color: #EAEAEA;
+    --text-color: #eaeaea;
+    --correct-letter-color: #eaeaea;
     --missing-letter-color: #646669;
-    --incorrect-letter-color: #E16666;
-    --out-of-range-letter-color: #AA2222;
+    --incorrect-letter-color: #e16666;
+    --out-of-range-letter-color: #aa2222;
 }
 
 body {
-    margin : 0;
+    margin: 0;
     display: flex;
+    flex-direction: column;
     background-color: var(--bg-color);
     color: var(--text-color);
     justify-content: center;
     align-items: center;
     height: 100vh;
-    
 }
 
 #words {
@@ -26,7 +26,8 @@ body {
 
 #typing-area {
     display: flex;
-    width: 80%
+    width: 80%;
+    user-select: none;
 }
 
 .word-incorrect {
@@ -43,33 +44,63 @@ body {
 }
 
 .letter-correct {
-    color: var(--correct-letter-color)
+    color: var(--correct-letter-color);
 }
 
 .letter-incorrect {
-    color: var(--incorrect-letter-color)
+    color: var(--incorrect-letter-color);
 }
 
 .letter-out-of-range {
-    color: var(--out-of-range-letter-color)
+    color: var(--out-of-range-letter-color);
 }
 
-#caret {
+#words-input:focus ~ #caret {
     width: 3px;
     background-color: yellow;
     position: absolute;
     border-radius: 1rem;
+    top: 0;
+    left: 0;
+    height: 2.5em;
 
-    transition: top 150ms, left 150ms;
+    opacity: 0;
+
+    transition: transform 150ms;
     animation: caret 500ms ease-in-out infinite alternate;
 }
 
+@keyframes caret-init {
+    0% {opacity: 0; }
+    100% { opacity: 1; }
+}
+
 @keyframes caret {
-    0% { opacity: 0; }
-    50% { opacity: 1; }
+    0% {
+        opacity: 0;
+    }
+    50% {
+        opacity: 1;
+    }
 }
 
 #words-input {
     all: unset;
     width: 0;
+}
+
+#restart-btn {
+    cursor: pointer;
+    padding: 0;
+    color: var(--missing-letter-color);
+    border: unset;
+    background-color: unset;
+    transition: color 150ms;
+
+    outline-color: yellow;
+}
+
+#restart-btn:focus-within,
+#restart-btn:hover {
+    color: var(--text-color);
 }

@@ -7,6 +7,7 @@ type Letter = {
 };
 
 type Word = {
+    index: number;
     letters: Letter[];
 };
 
@@ -63,17 +64,27 @@ function letterIsCurrent(
     return idx === input.length - 1 ? "after" : "not";
 }
 
-function buildWord(word: string, input: string, current: boolean): Word {
+type WordInfo = {
+    word: string;
+    input: string;
+    wordIndex: number;
+    currentInputIndex: number;
+};
+
+function buildWord(
+    { word, input, wordIndex, currentInputIndex }: WordInfo,
+): Word {
     const max = Math.max(word.length, input.length);
-    const letters = range(max).map((idx) =>
-        buildLetter({
+    const current = wordIndex === currentInputIndex;
+    const letters = range(max).map((idx) => {
+        return buildLetter({
             word,
             input,
             idx,
             current: current ? letterIsCurrent({ word, input, idx }) : "not",
-        })
-    );
-    return { letters };
+        });
+    });
+    return { letters, index: wordIndex };
 }
 
 function wordCorrect(word: Letter[]): boolean {
@@ -92,10 +103,14 @@ function buildUi(inputWords: string[], words: string[]): Word[] {
         "input words should never be empty",
     );
 
-    return words.map((word, wordIdx) => {
-        const input = inputWords[wordIdx] ?? "";
-        const current = wordIdx === inputWords.length - 1;
-        return buildWord(word, input, current);
+    return words.map((word, wordIndex) => {
+        const input = inputWords[wordIndex] ?? "";
+        return buildWord({
+            word,
+            input,
+            wordIndex,
+            currentInputIndex: inputWords.length - 1,
+        });
     });
 }
 
@@ -111,6 +126,7 @@ function renderWord(word: Word): HTMLElement {
     const letters = word.letters.map(renderLetter);
     const element = document.createElement("div");
     element.classList.add("word");
+    element.id = `word-${word.index}`;
 
     const isCurrentWord = word.letters.some((letter) =>
         letter.current !== "not"
@@ -120,10 +136,6 @@ function renderWord(word: Word): HTMLElement {
     }
     element.append(...letters);
     return element;
-}
-
-function renderUi(words: Word[]): HTMLElement[] {
-    return words.map(renderWord);
 }
 
 function moveCaret(caret: HTMLElement, words: HTMLElement) {
@@ -138,29 +150,79 @@ function moveCaret(caret: HTMLElement, words: HTMLElement) {
     }
     const current = letter.dataset.current;
     const rect = letter.getBoundingClientRect();
+    let x;
     if (current === "at") {
-        caret.style.left = `${rect.left}px`;
+        x = rect.left;
     } else if (current === "after") {
-        caret.style.left = `${rect.right}px`;
+        x = rect.right;
     } else {
         throw new Error(`unreachable: invalid 'current' value: '${letter}'`);
     }
-    caret.style.top = `${rect.top - rect.height * 0.125}px`;
-    caret.style.height = `${rect.height}px`;
+    const y = rect.top - rect.height * 0.125;
+    caret.style.transform = `translate(${x}px, ${y}px)`;
 }
 
-function render(
-    input: string,
-    words: string[],
-) {
-    const wordsElement = document.querySelector<HTMLDivElement>("#words")!;
-    const inputWords = input.split(" ");
-    wordsElement.replaceChildren(
-        ...renderUi(buildUi(inputWords, words)),
+function diffUi(old: OldUi, current: Word[]): Word[] {
+    console.assert(
+        old.ui.length === current.length,
+        "should not add old or new words after start",
     );
+    return range(current.length).filter((index) => {
+        const oldLetters = old.ui[index].letters;
+        const currentLetters = current[index].letters;
+        if (oldLetters.length !== currentLetters.length) {
+            return true;
+        }
+        return range(currentLetters.length).some((index) => {
+            const old = oldLetters[index];
+            const current = currentLetters[index];
+            return current.kind !== old.kind || current.value !== old.value ||
+                current.current !== old.current;
+        });
+    }).map((index) => current[index]);
+}
 
+function renderUi(words: Word[]): HTMLElement[] {
+    return words.map(renderWord);
+}
+
+function animateCaret(wordsElement: HTMLElement) {
     const caretElement = document.querySelector<HTMLDivElement>("#caret")!;
     requestAnimationFrame(() => moveCaret(caretElement, wordsElement));
+}
+
+type OldUi = { ui: Word[] };
+
+function render(
+    rawInput: string,
+    words: string[],
+    old: OldUi,
+) {
+    const input = rawInput.split(" ");
+    const wordsElement = document.querySelector<HTMLDivElement>("#words")!;
+    const current = buildUi(input, words);
+    const ui = diffUi(old, current);
+    for (const word of ui) {
+        const element = document.getElementById(`word-${word.index}`);
+        if (!element) {
+            throw new Error("we always render based off of an old input value");
+        }
+        element.replaceWith(
+            renderWord(word),
+        );
+    }
+    animateCaret(wordsElement);
+
+    old.ui = current;
+}
+
+function initialRender(rawInput: string, words: string[]): OldUi {
+    const input = rawInput.split(" ");
+    const wordsElement = document.querySelector<HTMLDivElement>("#words")!;
+    const ui = buildUi(input, words);
+    wordsElement.replaceChildren(...renderUi(ui));
+    animateCaret(wordsElement);
+    return { ui };
 }
 
 async function main() {
@@ -168,15 +230,64 @@ async function main() {
 
     const typingArea = document.querySelector<HTMLDivElement>("#typing-area")!;
     const input = document.querySelector<HTMLInputElement>("#words-input")!;
+
+    const oldUi = initialRender(input.value, words);
+
     typingArea.addEventListener("click", () => input.focus());
-    input.addEventListener("keydown", () => {
-        input.setSelectionRange(input.value.length, input.value.length);
+    input.addEventListener(
+        "keydown",
+        () => input.setSelectionRange(input.value.length, input.value.length),
+    );
+
+    input.addEventListener("keydown", (event) => {
+        if (event.key === "Backspace") {
+            const distance = event.ctrlKey
+                ? input.value.match(/\b\w+ ?$/)![0].length
+                : 1;
+
+            render(
+                input.value.slice(0, input.value.length - distance),
+                words,
+                oldUi,
+            );
+            return;
+        }
+
+        if (event.key.length !== 1 || event.ctrlKey || event.altKey) {
+            return;
+        }
+
+        render(input.value + event.key, words, oldUi);
     });
+
     input.addEventListener(
         "keyup",
-        () => render(input.value, words),
+        () => render(input.value, words, oldUi),
     );
-    render(input.value, words);
+    addEventListener(
+        "resize",
+        () => render(input.value, words, oldUi),
+    );
+
+    const restart = document.querySelector<HTMLElement>("#restart-btn")!;
+
+    restart.addEventListener("click", () => {
+        render("", words, oldUi);
+        input.value = "";
+        input.focus();
+    });
+
+    restart.addEventListener("keydown", (event: KeyboardEvent) => {
+        if (event.key !== "Enter" && event.key !== "Space") return;
+
+        if (!(event.target instanceof HTMLElement)) {
+            throw new Error(
+                "unreachable: event.target is always a htmlelement",
+            );
+        }
+
+        event.target.click();
+    });
 }
 
 main();

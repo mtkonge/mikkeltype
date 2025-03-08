@@ -172,10 +172,29 @@ async function main() {
     input.addEventListener("keydown", () => {
         input.setSelectionRange(input.value.length, input.value.length);
     });
+
+    input.addEventListener("keydown", (event) => {
+        if (event.key === "Backspace") {
+            const distance = event.ctrlKey
+                ? input.value.match(/\b\w+ ?$/)![0].length
+                : 1;
+
+            render(input.value.slice(0, input.value.length - distance), words);
+            return;
+        }
+
+        if (event.key.length !== 1 || event.ctrlKey || event.altKey) {
+            return;
+        }
+
+        render(input.value + event.key, words);
+    });
+
     input.addEventListener(
         "keyup",
         () => render(input.value, words),
     );
+    window.addEventListener("resize", () => render(input.value, words));
     render(input.value, words);
 }
 

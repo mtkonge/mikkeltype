@@ -192,10 +192,11 @@ function animateCaret(wordsElement: HTMLElement) {
 }
 
 function render(
-    input: string[],
+    rawInput: string,
     words: string[],
     old: Word[] | null,
 ): Word[] {
+    const input = rawInput.split(" ");
     const wordsElement = document.querySelector<HTMLDivElement>("#words")!;
     const current = buildUi(input, words);
     if (old === null) {
@@ -224,17 +225,56 @@ async function main() {
     const typingArea = document.querySelector<HTMLDivElement>("#typing-area")!;
     const input = document.querySelector<HTMLInputElement>("#words-input")!;
 
-    let oldUi = render(input.value.split(" "), words, null);
+    let oldUi = render(input.value, words, null);
 
     typingArea.addEventListener("click", () => input.focus());
     input.addEventListener("keydown", () => {
         input.setSelectionRange(input.value.length, input.value.length);
     });
-    addEventListener(
+
+    input.addEventListener("keydown", (event) => {
+        if (event.key === "Backspace") {
+            const distance = event.ctrlKey
+                ? input.value.match(/\b\w+ ?$/)![0].length
+                : 1;
+
+            render(
+                input.value.slice(0, input.value.length - distance),
+                words,
+                oldUi,
+            );
+            return;
+        }
+
+        if (event.key.length !== 1 || event.ctrlKey || event.altKey) {
+            return;
+        }
+
+        render(input.value + event.key, words, oldUi);
+    });
+
+    input.addEventListener(
         "keyup",
-        () => oldUi = render(input.value.split(" "), words, oldUi),
+        () => oldUi = render(input.value, words, oldUi),
     );
-    oldUi = render(input.value.split(" "), words, oldUi);
+    addEventListener(
+        "resize",
+        () => render(input.value, words, oldUi),
+    );
+
+    const restart = document.querySelector<HTMLElement>("#restart-btn")!;
+
+    restart.addEventListener("click", () => {
+        input.value = "";
+        render("", words, oldUi);
+        document.querySelector<HTMLInputElement>("#words-input")!.focus();
+    });
+
+    restart.addEventListener("keydown", (event: KeyboardEvent) => {
+        if (event.key === "Enter" || event.key === "Space") {
+            (event.target as HTMLElement).click();
+        }
+    });
 }
 
 main();

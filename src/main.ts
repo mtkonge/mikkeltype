@@ -196,6 +196,20 @@ async function main() {
     );
     window.addEventListener("resize", () => render(input.value, words));
     render(input.value, words);
+
+    const restart = document.querySelector<HTMLElement>("#restart-btn")!;
+
+    restart.addEventListener("click", () => {
+        input.value = "";
+        render("", words);
+        document.querySelector<HTMLInputElement>("#words-input")!.focus();
+    });
+
+    restart.addEventListener("keydown", (event: KeyboardEvent) => {
+        if (event.key === "Enter" || event.key === "Space") {
+            (event.target as HTMLElement).click();
+        }
+    });
 }
 
 main();
